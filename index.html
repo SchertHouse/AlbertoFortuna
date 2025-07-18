@@ -266,7 +266,7 @@
           }
           const rms = Math.sqrt(sum / dataArray.length);
 
-          const targetScale = 1 + Math.min(rms / 64, 0.2)*2;
+          const targetScale = 1 + Math.min(rms / 64, 0.2)*3;
 
           const smoothing = 0.2;
           currentScale += (targetScale - currentScale) * smoothing;
