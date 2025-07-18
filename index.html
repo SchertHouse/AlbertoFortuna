@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Lettera A Interattiva</title>
+  <style>
+    :root {
+      --container-height: 70%;
+      --font-size-h: 2.5vh;
+      --font-size-w: 2.5vw;
+    }
+
+    html body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111;
+      margin: 0;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #logo-container {
+      z-index:0;
+      aspect-ratio: 1 / 1;
+      position: relative;
+    }
+
+    .segment {
+      border-radius: 0.5em;
+      color: #fff;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      width: 100%;
+      height: 100%;
+      background-color: #3da5c2;
+      font-size: 2.5vh;
+    }
+
+    /* Portrait: usa height */
+    @media (orientation: landscape) {
+      #logo-container {
+        height: var(--container-height);
+        width: auto;
+      }
+      .segment {
+        font-size: var(--font-size-h);
+      }
+    }
+
+    /* Landscape: usa width */
+    @media (orientation: portrait) {
+      #logo-container {
+        width: var(--container-height);
+        height: auto;
+      }
+
+      .segment {
+        font-size: var(--font-size-w);
+      }
+    }
+
+    .left {
+      position: absolute;
+      top: 0%;
+      right: 47.5%;
+      width: 4%;
+      height: 100%;
+      transform: rotate(20deg);
+      transform-origin: top center;
+      z-index:0;
+      direction: rtl;
+    }
+
+    .right {
+      position: absolute;
+      top: 0%;
+      left: 47.5%;
+      width: 4%;
+      height: 100%;
+      transform: rotate(-20deg);
+      transform-origin: top center;
+      z-index:0;
+    }
+
+    .f1, .f2 {
+      position: absolute;
+      left: 51%;
+      top: 0%;
+      width: 50%;
+      height: 4%;
+      transform: rotate(-20deg);
+      z-index:1;
+    }
+
+    .f2 {
+      left: 64%;
+      top: 35%;
+      width: 40%
+    }
+
+    .cross {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 38%;
+      height: 4%;
+      transform: translateX(-50%);
+      z-index:1;
+    }
+
+    .segment > div {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      padding: 5%;
+      text-align: center;
+    }
+
+    .segment:hover {
+      width: 1000%;
+    }
+
+    .left:hover, .cross:hover, .right:hover {
+      z-index:50;
+    }
+
+    .cross > .segment:hover,
+    .f1 > .segment:hover,
+    .f2 > .segment:hover {
+      width: 100%;
+      height: 1000%;
+    }
+
+    .segment:hover > div {
+      opacity: 5;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="logo-container">
+    <div class="cross"><div class="segment"><div>Traversa centrale Traversa centrale Traversa centrale Traversa centrale Traversa centrale </div></div></div>
+    <div class="left"><div class="segment"><div>Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra </div></div></div>
+    <div class="right"><div class="segment"><div>Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
+    <div class="f1"><div class="segment"><div>F1 Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
+    <div class="f2"><div class="segment"><div>F2 Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
+  </div>
+
+  <script>
+    async function startAudio() {
+      const container = document.getElementById('logo-container');
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Il tuo browser non supporta l'accesso al microfono.");
+        return;
+      }
+
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) {
+        alert("Il tuo browser non supporta le Web Audio API.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const audioCtx = new AudioContext();
+        const source = audioCtx.createMediaStreamSource(stream);
+
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        source.connect(analyser);
+
+        let currentScale = 1;  // scala attuale, parte da 1
+
+        function animate() {
+          analyser.getByteTimeDomainData(dataArray);
+
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const val = dataArray[i] - 128;
+            sum += val * val;
+          }
+          const rms = Math.sqrt(sum / dataArray.length);
+
+          const targetScale = 1 + Math.min(rms / 64, 0.2);
+
+          const smoothing = 0.15;
+          currentScale += (targetScale - currentScale) * smoothing;
+
+          container.style.transform = `scale(${currentScale.toFixed(3)})`;
+
+          requestAnimationFrame(animate);
+        }
+
+        animate();
+
+      } catch (err) {
+        console.error(err);
+        alert("Errore durante l'accesso al microfono: " + err.message);
+      }
+    }
+
+    startAudio();
+  </script>
+
+</body>
+
+</html>
