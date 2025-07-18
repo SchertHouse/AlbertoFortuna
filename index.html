@@ -268,7 +268,7 @@
 
           const targetScale = 1 + Math.min(rms / 64, 0.2)*3;
 
-          const smoothing = 0.2;
+          const smoothing = 0.15;
           currentScale += (targetScale - currentScale) * smoothing;
 
           container.style.transform = `scale(${currentScale.toFixed(3)})`;
