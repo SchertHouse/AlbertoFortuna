@@ -266,9 +266,9 @@
           }
           const rms = Math.sqrt(sum / dataArray.length);
 
-          const targetScale = 1 + Math.min(rms / 64, 0.2);
+          const targetScale = 1 + Math.min(rms / 128, 0.2)*2;
 
-          const smoothing = 0.15;
+          const smoothing = 0.2;
           currentScale += (targetScale - currentScale) * smoothing;
 
           container.style.transform = `scale(${currentScale.toFixed(3)})`;
