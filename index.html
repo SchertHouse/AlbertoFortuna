@@ -3,12 +3,25 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Lettera A Interattiva</title>
+  <title>Alberto Fortuna</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     :root {
-      --container-height: 70%;
-      --font-size-h: 2.5vh;
-      --font-size-w: 2.5vw;
+      --container-height-l: 50%;
+      --container-height: 40%;
+      --font-size-l: 2.5vh;
+      --font-size: 1.5vw;
+      --transition-time: .5s;
+      --segment-color: #2c71a3;
+    }
+
+    @keyframes lampeggia {
+      0%, 100% {
+        background-color: var(--segment-color);
+      }
+      50% {
+        background-color: #a3c7e7;
+      }
     }
 
     html body {
@@ -19,36 +32,46 @@
       margin: 0;
       height: 100vh;
       width: 100vw;
+      font-family: 'Courier New', Courier, monospace;
+      overflow: hidden;
     }
 
     #logo-container {
       z-index:0;
       aspect-ratio: 1 / 1;
       position: relative;
+      will-change: transform;
     }
 
-    .segment {
+    .content {
       border-radius: 0.5em;
       color: #fff;
       align-items: center;
       justify-content: center;
       font-size: 14px;
       overflow: hidden;
-      transition: all 0.3s ease;
       width: 100%;
       height: 100%;
-      background-color: #3da5c2;
+      background-color: var(--segment-color);
+      animation: lampeggia 2s 2;
       font-size: 2.5vh;
+      max-height: 160%;
+      min-height: 100%;
+      transition: all var(--transition-time) ease;
+    }
+
+    .content ul {
+      padding-inline-start: 0.5em;
     }
 
     /* Portrait: usa height */
     @media (orientation: landscape) {
       #logo-container {
-        height: var(--container-height);
+        height: var(--container-height-l);
         width: auto;
       }
-      .segment {
-        font-size: var(--font-size-h);
+      .content {
+        font-size: var(--font-size-l);
       }
     }
 
@@ -59,42 +82,46 @@
         height: auto;
       }
 
-      .segment {
-        font-size: var(--font-size-w);
+      .content {
+        font-size: var(--font-size);
       }
     }
 
-    .left {
+    .segment {
       position: absolute;
+      transform-origin: top center;
+      z-index:0;
+    }
+
+    .left {
       top: 0%;
       right: 47.5%;
       width: 4%;
       height: 100%;
       transform: rotate(20deg);
-      transform-origin: top center;
-      z-index:0;
       direction: rtl;
+      z-index: 1;
+    }
+
+    .left .content {
+      direction: ltr;
     }
 
     .right {
-      position: absolute;
       top: 0%;
       left: 47.5%;
       width: 4%;
       height: 100%;
       transform: rotate(-20deg);
-      transform-origin: top center;
-      z-index:0;
+      z-index: 1;
     }
 
     .f1, .f2 {
-      position: absolute;
       left: 51%;
       top: 0%;
       width: 50%;
       height: 4%;
       transform: rotate(-20deg);
-      z-index:1;
     }
 
     .f2 {
@@ -103,41 +130,82 @@
       width: 40%
     }
 
-    .cross {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 38%;
-      height: 4%;
-      transform: translateX(-50%);
-      z-index:1;
+    .content > div {
+      opacity: 0;
+      padding: 5%;
+      text-align: left;
+      transition: all var(--transition-time) ease;
     }
 
-    .segment > div {
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      padding: 5%;
+    .content div > h2 {
       text-align: center;
     }
 
-    .segment:hover {
-      width: 1000%;
+    .f1.clicked, .f2.clicked, .left.clicked, .right.clicked {
+      z-index:2;
+    }
+
+    .content.clicked {
+      width: 2000%;
       cursor: pointer;
+      height: auto;
     }
 
-    .left:hover, .cross:hover, .right:hover {
-      z-index:50;
+    .f1 > .content,
+    .f2 > .content {
+      min-height: 100%;
+      max-height: 100%;
+      height: 100%;
+      animation-delay: 1s;
     }
 
-    .cross > .segment:hover,
-    .f1 > .segment:hover,
-    .f2 > .segment:hover {
+    .f1 > .content.clicked,
+    .f2 > .content.clicked {
       width: 100%;
-      height: 1000%;
+      height: max-content;
+      height: 2000%;
+      max-height: max-content;
+    }
+    
+    .f2 > .content.clicked {
+      width: 150%;
+    }
+    .content.clicked div {
+      opacity: 1;
     }
 
-    .segment:hover > div {
-      opacity: 5;
+    .social-icons {
+      width: 100%;
+      text-align: center;
+    }
+
+    .cross {
+      left: 50%;
+      top: 50%;
+      width: 45%;
+      clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+      transform: translateX(-50%);
+    }    
+
+    .social-icons {
+      color: #fff;
+      background-color: #2c71a3;
+      font-family: initial;
+    }
+
+    .social-icons a {
+      font-size: 2rem;
+      width: 100%;
+      color: #000;
+      text-decoration: none;
+      transition: color 0.3s;
+      text-align: center;
+      margin: 4em 0;
+      padding: 0 4%;
+    }
+
+    .social-icons a.clicked {
+      color: #c5c762c2;
     }
   </style>
 </head>
@@ -145,14 +213,25 @@
 <body>
 
   <div id="logo-container">
-    <div class="cross"><div class="segment"><div>Traversa centrale Traversa centrale Traversa centrale Traversa centrale Traversa centrale </div></div></div>
-    <div class="left"><div class="segment"><div>Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra Gamba sinistra </div></div></div>
-    <div class="right"><div class="segment"><div>Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
-    <div class="f1"><div class="segment"><div>F1 Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
-    <div class="f2"><div class="segment"><div>F2 Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra Gamba destra </div></div></div>
+    <div class="segment cross"><div class="social-icons">
+
+        <a href="https://www.instagram.com/albertofortuna" target="_blank" aria-label="Instagram">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="https://www.facebook.com/albertofortuna" target="_blank" aria-label="Facebook">
+          <i class="fab fa-facebook"></i>
+        </a>
+
+    </div></div>
+    <div class="segment left"><div class="content"><div><h2>Alberto Fortuna</h2><p>è un DJ italiano con uno stile distintivo che unisce house, techno ed elettronica melodica.<br>Formatosi nei club e festival italiani, trae ispirazione dalla scena europea e da sonorità sperimentali.<br>I suoi set variano da DJ set club-oriented a performance ibride con live electronics.</p></div></div></div>
+    <div class="segment right"><div class="content"><div><h2>Generi musicali e set disponibili</h2><ul><li>Set dal vivo</li><li>Set ibridi</li><li>B2b con altri artisti</li><li>Show tematici techno: house, EDM, hip-hop o crossover</li></div></div></div>
+    <div class="segment f1"><div class="content"><div><h2>SUCA</h2></div></div></div>
+    <div class="segment f2"><div class="content"><div><h2>Tour</h2><ul><li>20/03 - Milano</li><li>27/03 - Bologna</li><li>25/08 - Napoli</li></ul></div></div></div>
   </div>
 
   <script>
+
+    var zommed = false;
     async function startAudio() {
       const container = document.getElementById('logo-container');
 
@@ -195,7 +274,8 @@
           const smoothing = 0.15;
           currentScale += (targetScale - currentScale) * smoothing;
 
-          container.style.transform = `scale(${currentScale.toFixed(3)})`;
+          if(!zommed)
+            container.style.transform = `scale(${currentScale.toFixed(3)})`;
 
           requestAnimationFrame(animate);
         }
@@ -209,6 +289,98 @@
     }
 
     startAudio();
+
+    const logoContainer = document.getElementById('logo-container');
+
+  function zoomAndPanToElement(el) {
+    
+    var valsTrans = getCurrentTransformValues(logoContainer);
+    var segment = getCurrentTransformValues(el.parentElement);
+
+    const rect = el.getBoundingClientRect();
+    const scaleX = window.innerWidth / rect.width;
+    const scaleY = window.innerHeight / rect.height;
+    const scale = Math.min(scaleX, scaleY); // per non ritagliare
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    const offsetX = window.innerWidth / 2 - centerX;
+    const offsetY = window.innerHeight / 2 - centerY;
+
+    // Applica trasformazione
+    logoContainer.style.transition = 'transform 0.8s ease';
+    logoContainer.style.transform = `translate(${(offsetX+valsTrans.translateX)*scale}px, ${(offsetY+valsTrans.translateY)*scale}px) scale(${scale*valsTrans.scale})`;
+
+  }
+
+  // Ripristina trasformazioni al mouseout
+  function resetZoom() {
+    logoContainer.style.transform = 'scale(1) translate(0, 0)';
+  }
+
+  document.querySelectorAll('.content').forEach(content => {
+    content.addEventListener('click', e => {
+      zommed = true;
+
+      content.addEventListener('transitionend', function handler(e) {
+        if (e.propertyName === 'width' || e.propertyName === 'height') {          
+          zoomAndPanToElement(content);
+          content.removeEventListener('transitionend', handler);
+        }
+      });
+
+      document.querySelectorAll('.content.clicked').forEach(el => {
+        if (el !== content) el.classList.remove('clicked');
+      });
+
+      content.classList.add('clicked');
+    });
+  });
+
+  document.body.addEventListener('click', (e) => {
+    // Se clicchi fuori da qualsiasi .content, resetta lo zoom
+    if (!e.target.closest('.content')) {
+      resetZoom();
+      zommed = false;
+      
+      // Rimuove anche la classe .clicked da eventuali content attivi
+      document.querySelectorAll('.content.clicked').forEach(el => {
+        el.classList.remove('clicked');
+      });
+    }
+  });
+
+  function getCurrentTransformValues(el) {
+    const computed = getComputedStyle(el).transform;
+
+    if (!computed || computed === 'none') {
+      return {
+        translateX: 0,
+        translateY: 0,
+        scale: 1,
+        rotation: 0 // in gradi
+      };
+    }
+
+    const match = computed.match(/^matrix\(([^)]+)\)$/);
+    if (!match) return null;
+
+    const values = match[1].split(', ').map(parseFloat);
+    const [a, b, c, d, e, f] = values;
+
+    const scale = Math.sqrt(a * a + b * b); // solo se scala uniforme
+    const rotationRad = Math.atan2(b, a);   // rotazione in radianti
+    const rotationDeg = rotationRad * (180 / Math.PI); // converti in gradi
+
+    return {
+      scale: scale,
+      translateX: e,
+      translateY: f,
+      rotation: rotationDeg
+    };
+  }
+
   </script>
 
 </body>
