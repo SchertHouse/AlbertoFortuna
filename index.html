@@ -244,8 +244,11 @@
 
   <script>
 
-    let isRunning = true;
+    var isRunning = true;
     let animationId = null;
+    let logo = document.getElementById('logo-container');
+    let dataArray;
+    let analyser;
 
     function sinusoide(t, freq = 1, amp = 1, phase = 0) {
       return amp * Math.sin(2 * Math.PI * freq * t + phase);
@@ -270,55 +273,59 @@
         const audioCtx = new AudioContext();
         const source = audioCtx.createMediaStreamSource(stream);
 
-        const analyser = audioCtx.createAnalyser();
+        analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
 
         source.connect(analyser);
 
-        let currentScale = 1;
-        let lastScale = 0;
-
-        function animate() {
-
-          if(isRunning) {
-            container.style.transition = 'none';
-
-            analyser.getByteTimeDomainData(dataArray);
-
-            let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
-              const val = dataArray[i] - 128;
-              sum += val * val;
-            }
-            const rms = Math.sqrt(sum / dataArray.length);
-
-            const targetScale = 1 + Math.min(rms / 64, 0.2) * 2;
-            const smoothing = 0.15;
-            currentScale += (targetScale - currentScale) * smoothing;
-
-            if (isRunning && Math.abs(currentScale - lastScale) > 0.01) {
-              container.style.transform = `scale(${(currentScale).toFixed(3)})`;
-              lastScale = currentScale;
-            }
-          }
-          
-          requestAnimationFrame(animate);          
-        }
-
         animate();
+
       } catch (err) {
         console.error(err);
         alert("Errore durante l'accesso al microfono: " + err.message);
       }
     }
 
+    let idAnimation;
+    let currentScale = 1;
+    let lastScale = 0;
+    function animate() {
+
+        analyser.getByteTimeDomainData(dataArray);
+
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const val = dataArray[i] - 128;
+          sum += val * val;
+        }
+        const rms = Math.sqrt(sum / dataArray.length);
+
+        const targetScale = 1 + Math.min(rms / 64, 0.2) * 2;
+        const smoothing = 0.15;
+        currentScale += (targetScale - currentScale) * smoothing;
+
+        if (isRunning) {
+          if(Math.abs(currentScale - lastScale) > 0.01) {
+            logo.classList.add('no-transition');
+            logo.style.transform = `scale(${(currentScale).toFixed(3)})`;
+            lastScale = currentScale;
+          }    
+          idAnimation = requestAnimationFrame(animate);
+        } else {
+          logo.classList.remove('no-transition');
+          cancelAnimationFrame(idAnimation);
+        }
+    }
+
     function stopAudio() {
       isRunning = false;
+      logo.classList.remove('no-transition');
     }
 
     function startAudio() {
       isRunning = true;
+      animate();
     }
 
     document.querySelectorAll('.content').forEach(content => {
@@ -330,7 +337,6 @@
       stopAudio();
       resetZoom();
       document.querySelectorAll('.content').forEach(content => {
-        let logo = document.getElementById('logo-container')
         logo.classList.add('no-transition');
         content.classList.add('clicked', 'no-transition');
         content.data = content.getBoundingClientRect();
