@@ -41,6 +41,7 @@
       aspect-ratio: 1 / 1;
       position: relative;
       will-change: transform;
+      opacity: 0;
     }
 
     .content {
@@ -58,6 +59,7 @@
       max-height: 160%;
       min-height: 100%;
       transition: all var(--transition-time) ease;
+      cursor: pointer;
     }
 
     .content ul {
@@ -127,14 +129,14 @@
     .f2 {
       left: 64%;
       top: 35%;
-      width: 40%
+      width: 40%;
     }
 
     .content > div {
       opacity: 0;
-      padding: 5%;
+      padding: 6%;
       text-align: left;
-      transition: all var(--transition-time) ease;
+      transition: opacity var(--transition-time) ease;
     }
 
     .content div > h2 {
@@ -147,7 +149,7 @@
 
     .content.clicked {
       width: 2000%;
-      cursor: pointer;
+      cursor: default;
       height: auto;
       height: auto;
     }
@@ -214,6 +216,10 @@
     .social-icons a.clicked {
       color: #c5c762c2;
     }
+
+    .no-transition {
+      transition: none !important;
+    }
   </style>
 </head>
 
@@ -230,16 +236,22 @@
         </a>
 
     </div></div>
-    <div class="segment left"><div class="content"><div><h2>Alberto Fortuna</h2><p>è un DJ italiano con uno stile distintivo che unisce house, techno ed elettronica melodica.<br>Formatosi nei club e festival italiani, trae ispirazione dalla scena europea e da sonorità sperimentali.<br>I suoi set variano da DJ set club-oriented a performance ibride con live electronics.</p></div></div></div>
-    <div class="segment right"><div class="content"><div><h2>Generi musicali e set disponibili</h2><ul><li>Set dal vivo</li><li>Set ibridi</li><li>B2b con altri artisti</li><li>Show tematici techno: house, EDM, hip-hop o crossover</li></div></div></div>
-    <div class="segment f1"><div class="content"><div><h2>SUCA</h2></div></div></div>
-    <div class="segment f2"><div class="content"><div><h2>Tour</h2><ul><li>20/03 - Milano</li><li>27/03 - Bologna</li><li>25/08 - Napoli</li></ul></div></div></div>
+    <div class="segment left"><div class="content clicked"><div><h2>Alberto Fortuna</h2><p>è un DJ italiano con uno stile distintivo che unisce house, techno ed elettronica melodica.<br>Formatosi nei club e festival italiani, trae ispirazione dalla scena europea e da sonorità sperimentali.<br>I suoi set variano da DJ set club-oriented a performance ibride con live electronics.</p></div></div></div>
+    <div class="segment right"><div class="content clicked"><div><h2>Generi musicali e set disponibili</h2><ul><li>Set dal vivo</li><li>Set ibridi</li><li>B2b con altri artisti</li><li>Show tematici techno: house, EDM, hip-hop o crossover</li></div></div></div>
+    <div class="segment f1"><div class="content clicked"><div><h2>SUCA</h2></div></div></div>
+    <div class="segment f2"><div class="content clicked"><div><h2>Tour</h2><ul><li>20/03 - Milano</li><li>27/03 - Bologna</li><li>25/08 - Napoli</li></ul></div></div></div>
   </div>
 
   <script>
 
-    var zommed = false;
-    async function startAudio() {
+    let isRunning = true;
+    let animationId = null;
+
+    function sinusoide(t, freq = 1, amp = 1, phase = 0) {
+      return amp * Math.sin(2 * Math.PI * freq * t + phase);
+    }
+
+    async function initAudio() {
       const container = document.getElementById('logo-container');
 
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -264,130 +276,163 @@
 
         source.connect(analyser);
 
-        let currentScale = 1;  // scala attuale, parte da 1
+        let currentScale = 1;
+        let lastScale = 0;
 
         function animate() {
-          analyser.getByteTimeDomainData(dataArray);
 
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) {
-            const val = dataArray[i] - 128;
-            sum += val * val;
+          if(isRunning) {
+            container.style.transition = 'none';
+
+            analyser.getByteTimeDomainData(dataArray);
+
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              const val = dataArray[i] - 128;
+              sum += val * val;
+            }
+            const rms = Math.sqrt(sum / dataArray.length);
+
+            const targetScale = 1 + Math.min(rms / 64, 0.2) * 2;
+            const smoothing = 0.15;
+            currentScale += (targetScale - currentScale) * smoothing;
+
+            if (isRunning && Math.abs(currentScale - lastScale) > 0.01) {
+              container.style.transform = `scale(${(currentScale).toFixed(3)})`;
+              lastScale = currentScale;
+            }
           }
-          const rms = Math.sqrt(sum / dataArray.length);
-
-          const targetScale = 1 + Math.min(rms / 64, 0.2)*2;
-
-          const smoothing = 0.15;
-          currentScale += (targetScale - currentScale) * smoothing;
-
-          if(!zommed)
-            container.style.transform = `scale(${currentScale.toFixed(3)})`;
-
-          requestAnimationFrame(animate);
+          
+          requestAnimationFrame(animate);          
         }
 
         animate();
-
       } catch (err) {
         console.error(err);
         alert("Errore durante l'accesso al microfono: " + err.message);
       }
     }
 
-    startAudio();
+    function stopAudio() {
+      isRunning = false;
+    }
+
+    function startAudio() {
+      isRunning = true;
+    }
+
+    document.querySelectorAll('.content').forEach(content => {
+      content.data = content.getBoundingClientRect();
+      content.classList.remove('clicked');
+    });
+
+    window.addEventListener('resize', function () {
+      stopAudio();
+      resetZoom();
+      document.querySelectorAll('.content').forEach(content => {
+        let logo = document.getElementById('logo-container')
+        logo.classList.add('no-transition');
+        content.classList.add('clicked', 'no-transition');
+        content.data = content.getBoundingClientRect();
+        content.classList.remove('clicked', 'no-transition');
+        logo.classList.remove('no-transition');
+      });
+    });
+
+    initAudio();
 
     const logoContainer = document.getElementById('logo-container');
 
-  function zoomAndPanToElement(el) {
-    
-    var valsTrans = getCurrentTransformValues(logoContainer);
-    var segment = getCurrentTransformValues(el.parentElement);
+    logoContainer.style.opacity = 1;
 
-    const rect = el.getBoundingClientRect();
-    const scaleX = window.innerWidth / rect.width;
-    const scaleY = window.innerHeight / rect.height;
-    const scale = Math.min(scaleX, scaleY); // per non ritagliare
-
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-
-    const offsetX = window.innerWidth / 2 - centerX;
-    const offsetY = window.innerHeight / 2 - centerY;
-
-    // Applica trasformazione
-    logoContainer.style.transition = 'transform 0.8s ease';
-    logoContainer.style.transform = `translate(${(offsetX+valsTrans.translateX)*scale}px, ${(offsetY+valsTrans.translateY)*scale}px) scale(${scale*valsTrans.scale})`;
-
-  }
-
-  // Ripristina trasformazioni al mouseout
-  function resetZoom() {
-    logoContainer.style.transform = 'scale(1) translate(0, 0)';
-  }
-
-  document.querySelectorAll('.content').forEach(content => {
-    content.addEventListener('click', e => {
-      zommed = true;
-
-      content.addEventListener('transitionend', function handler(e) {
-        if (e.propertyName === 'width' || e.propertyName === 'height') {          
-          zoomAndPanToElement(content);
-          content.removeEventListener('transitionend', handler);
-        }
-      });
-
-      document.querySelectorAll('.content.clicked').forEach(el => {
-        if (el !== content) el.classList.remove('clicked');
-      });
-
-      content.classList.add('clicked');
-    });
-  });
-
-  document.body.addEventListener('click', (e) => {
-    // Se clicchi fuori da qualsiasi .content, resetta lo zoom
-    if (!e.target.closest('.content')) {
-      resetZoom();
-      zommed = false;
+    function zoomAndPanToElement(el) {
       
-      // Rimuove anche la classe .clicked da eventuali content attivi
-      document.querySelectorAll('.content.clicked').forEach(el => {
-        el.classList.remove('clicked');
-      });
+      const rect = el.data;
+      const scaleX = window.innerWidth / rect.width;
+      const scaleY = window.innerHeight / rect.height;
+      const scale = Math.min(scaleX, scaleY); // per non ritagliare
+
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const offsetX = window.innerWidth / 2 - centerX;
+      const offsetY = window.innerHeight / 2 - centerY;
+
+      // Applica trasformazione
+      logoContainer.style.transition = 'transform 0.8s ease';
+      logoContainer.style.transform = `rotate(${getCurrentTransformValues(el.parentElement).rotation*-0.75}deg) translate(${offsetX*scale}px, ${offsetY*scale}px) scale(${scale})`;
+
     }
-  });
 
-  function getCurrentTransformValues(el) {
-    const computed = getComputedStyle(el).transform;
+    // Ripristina trasformazioni al mouseout
+    function resetZoom() {
+      logoContainer.style.transform = 'scale(1) translate(0, 0)';
+    }
 
-    if (!computed || computed === 'none') {
+    document.querySelectorAll('.content').forEach(content => {
+      content.addEventListener('click', e => {
+        stopAudio();
+        document.body.style.cursor = 'pointer';
+        zoomAndPanToElement(content);
+
+        document.querySelectorAll('.content.clicked').forEach(el => {
+          if (el !== content) el.classList.remove('clicked');
+        });
+
+        content.classList.add('clicked');
+      });
+    });
+
+    document.body.addEventListener('click', (e) => {
+      // Se clicchi fuori da qualsiasi .content, resetta lo zoom
+      if (!e.target.closest('.content')) {
+        document.body.style.cursor = 'default';
+
+        logoContainer.addEventListener('transitionend', function handler(e) {       
+          if (!isRunning && e.propertyName === 'width' || e.propertyName === 'height' || e.propertyName === 'scale') {              
+            logoContainer.removeEventListener('transitionend', handler);
+            startAudio();
+          }
+        });
+
+        resetZoom();
+        
+        // Rimuove anche la classe .clicked da eventuali content attivi
+        document.querySelectorAll('.content.clicked').forEach(el => {
+          el.classList.remove('clicked');
+        });
+      }
+    });
+
+    function getCurrentTransformValues(el) {
+      const computed = getComputedStyle(el).transform;
+
+      if (!computed || computed === 'none') {
+        return {
+          translateX: 0,
+          translateY: 0,
+          scale: 1,
+          rotation: 0 // in gradi
+        };
+      }
+
+      const match = computed.match(/^matrix\(([^)]+)\)$/);
+      if (!match) return null;
+
+      const values = match[1].split(', ').map(parseFloat);
+      const [a, b, c, d, e, f] = values;
+
+      const scale = Math.sqrt(a * a + b * b); // solo se scala uniforme
+      const rotationRad = Math.atan2(b, a);   // rotazione in radianti
+      const rotationDeg = rotationRad * (180 / Math.PI); // converti in gradi
+
       return {
-        translateX: 0,
-        translateY: 0,
-        scale: 1,
-        rotation: 0 // in gradi
+        scale: scale,
+        translateX: e,
+        translateY: f,
+        rotation: rotationDeg
       };
     }
-
-    const match = computed.match(/^matrix\(([^)]+)\)$/);
-    if (!match) return null;
-
-    const values = match[1].split(', ').map(parseFloat);
-    const [a, b, c, d, e, f] = values;
-
-    const scale = Math.sqrt(a * a + b * b); // solo se scala uniforme
-    const rotationRad = Math.atan2(b, a);   // rotazione in radianti
-    const rotationDeg = rotationRad * (180 / Math.PI); // converti in gradi
-
-    return {
-      scale: scale,
-      translateX: e,
-      translateY: f,
-      rotation: rotationDeg
-    };
-  }
-
   </script>
 
 </body>
