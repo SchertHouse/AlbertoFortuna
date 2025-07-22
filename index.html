@@ -220,6 +220,14 @@
     .no-transition {
       transition: none !important;
     }
+
+    *:focus {
+      outline: none;
+    }
+
+    button, a, input, textarea, div {
+      -webkit-tap-highlight-color: transparent;
+    }
   </style>
 </head>
 
@@ -245,7 +253,6 @@
   <script>
 
     var isRunning = true;
-    let animationId = null;
     let logo = document.getElementById('logo-container');
     let dataArray;
     let analyser;
