@@ -257,6 +257,7 @@
     let logo = document.getElementById('logo-container');
     let dataArray;
     let analyser;
+    let audioCtx;
 
     function sinusoide(t, freq = 1, amp = 1, phase = 0) {
       return amp * Math.sin(2 * Math.PI * freq * t + phase);
@@ -278,11 +279,11 @@
 
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const audioCtx = new AudioContext();
+        audioCtx = new AudioContext();
         const source = audioCtx.createMediaStreamSource(stream);
 
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
+        analyser.fftSize = 1024;
         dataArray = new Uint8Array(analyser.frequencyBinCount);
 
         source.connect(analyser);
@@ -295,36 +296,50 @@
       }
     }
 
-    let idAnimation;
+    var idAnimation;
     let currentScale = 1;
     let lastScale = 0;
     function animate() {
+      // Ottieni i dati in frequenza (valori da 0 a 255)
+      analyser.getByteFrequencyData(dataArray);
 
-        analyser.getByteTimeDomainData(dataArray);
+      // Definisci la porzione di frequenze basse da considerare (es. primi 1/8)
+      const freqPerBin = audioCtx.sampleRate / analyser.fftSize;
+      const maxLowFreq = 150;
+      const numLowBins = Math.floor(maxLowFreq / freqPerBin);
 
-        let sum = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const val = dataArray[i] - 128;
+      let sum = 0;
+      for (let i = 0; i < numLowBins; i++) {
+          const val = dataArray[i];
           sum += val * val;
-        }
-        const rms = Math.sqrt(sum / dataArray.length);
+      }
+      const rmsB = Math.sqrt(sum / numLowBins);
 
-        const targetScale = 1 + Math.min(rms / 64, 0.2) * 2;
-        const smoothing = 0.15;
-        currentScale += (targetScale - currentScale) * smoothing;
+      sum = 0;
+      for (let i = numLowBins; i < dataArray.length; i++) {
+          const val = dataArray[i];
+          sum += val * val;
+      }
+      const rms = Math.sqrt(sum / (dataArray.length - numLowBins));
 
-        if (isRunning) {
-          if(Math.abs(currentScale - lastScale) > 0.01) {
-            logo.classList.add('no-transition');
-            logo.style.transform = `scale(${(currentScale).toFixed(3)})`;
-            lastScale = currentScale;
-          }    
+      // Mappatura del volume alle basse frequenze su una scala
+      console.log((rms/2 + rmsB*2));
+      const targetScale = 1 + Math.min( (rms/8 + rmsB) / 400, 1) * 0.5;
+      const smoothing = 0.35;
+      currentScale = currentScale * (1 - smoothing) + targetScale * smoothing;
+
+      if (isRunning) {
+          if (true || Math.abs(currentScale - lastScale) > 0.01) {
+              logo.classList.add('no-transition');
+              logo.style.transform = `scale(${currentScale.toFixed(3)})`;
+              lastScale = currentScale;
+          }
           idAnimation = requestAnimationFrame(animate);
-        } else {
+      } else {
           logo.classList.remove('no-transition');
           cancelAnimationFrame(idAnimation);
-        }
-    }
+      }
+  }
 
     function stopAudio() {
       isRunning = false;
@@ -333,7 +348,7 @@
 
     function startAudio() {
       isRunning = true;
-      animate();
+      setTimeout(animate, 1000);
     }
 
     document.querySelectorAll('.content').forEach(content => {
@@ -387,13 +402,13 @@
       content.addEventListener('click', e => {
         stopAudio();
         document.body.style.cursor = 'pointer';
-        zoomAndPanToElement(content);
 
         document.querySelectorAll('.content.clicked').forEach(el => {
           if (el !== content) el.classList.remove('clicked');
         });
 
         content.classList.add('clicked');
+        zoomAndPanToElement(content);
       });
     });
 
@@ -402,12 +417,7 @@
       if (!e.target.closest('.content')) {
         document.body.style.cursor = 'default';
 
-        logoContainer.addEventListener('transitionend', function handler(e) {       
-          if (!isRunning && e.propertyName === 'width' || e.propertyName === 'height' || e.propertyName === 'scale') {              
-            logoContainer.removeEventListener('transitionend', handler);
-            startAudio();
-          }
-        });
+        startAudio();
 
         resetZoom();
         
