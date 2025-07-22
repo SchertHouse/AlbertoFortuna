@@ -149,6 +149,7 @@
       width: 2000%;
       cursor: pointer;
       height: auto;
+      height: auto;
     }
 
     .f1 > .content,
@@ -196,6 +197,12 @@
     .social-icons a {
       font-size: 2rem;
       width: 100%;
+      color: #000;
+      text-decoration: none;
+      transition: color 0.3s;
+      text-align: center;
+      margin: 4em 0;
+      padding: 0 4%;
       color: #000;
       text-decoration: none;
       transition: color 0.3s;
@@ -269,7 +276,7 @@
           }
           const rms = Math.sqrt(sum / dataArray.length);
 
-          const targetScale = 1 + Math.min(rms / 64, 0.2);
+          const targetScale = 1 + Math.min(rms / 64, 0.2)*2;
 
           const smoothing = 0.15;
           currentScale += (targetScale - currentScale) * smoothing;
