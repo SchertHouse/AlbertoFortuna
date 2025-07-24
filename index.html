@@ -75,6 +75,7 @@
       }
       .content {
         font-size: var(--font-size-l);
+        border-radius: 1em;
       }
     }
 
@@ -87,6 +88,7 @@
 
       .content {
         font-size: var(--font-size);
+        border-radius: 1em;
       }
     }
 
@@ -303,9 +305,8 @@
       // Ottieni i dati in frequenza (valori da 0 a 255)
       analyser.getByteFrequencyData(dataArray);
 
-      // Definisci la porzione di frequenze basse da considerare (es. primi 1/8)
       const freqPerBin = audioCtx.sampleRate / analyser.fftSize;
-      const maxLowFreq = 150;
+      const maxLowFreq = 120;
       const numLowBins = Math.floor(maxLowFreq / freqPerBin);
 
       let sum = 0;
@@ -323,9 +324,8 @@
       const rms = Math.sqrt(sum / (dataArray.length - numLowBins));
 
       // Mappatura del volume alle basse frequenze su una scala
-      console.log((rms/2 + rmsB*2));
-      const targetScale = 1 + Math.min( (rms/8 + rmsB) / 400, 1) * 0.5;
-      const smoothing = 0.35;
+      const targetScale = 1 + Math.min((rms/255)/4 + rmsB/255 , 1)*0.3;
+      const smoothing = 1;
       currentScale = currentScale * (1 - smoothing) + targetScale * smoothing;
 
       if (isRunning) {
