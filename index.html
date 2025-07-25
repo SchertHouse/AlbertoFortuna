@@ -285,7 +285,7 @@
         const source = audioCtx.createMediaStreamSource(stream);
 
         analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 1024;
+        analyser.fftSize = 512;
         dataArray = new Uint8Array(analyser.frequencyBinCount);
 
         source.connect(analyser);
@@ -314,19 +314,26 @@
           const val = dataArray[i];
           sum += val * val;
       }
-      const rmsB = Math.sqrt(sum / numLowBins);
+      const rmsB = Math.sqrt(sum / numLowBins)/255;
 
       sum = 0;
-      for (let i = numLowBins; i < dataArray.length; i++) {
+      for (let i = dataArray.length/2-numLowBins; i < dataArray.length/2+numLowBins; i++) {
           const val = dataArray[i];
           sum += val * val;
       }
-      const rms = Math.sqrt(sum / (dataArray.length - numLowBins));
+      const rmsM = Math.sqrt(sum / numLowBins)/255;
+
+      sum = 0;
+      for (let i = dataArray.length-200-numLowBins; i < dataArray.length; i++) {
+          const val = dataArray[i];
+          sum += val * val;
+      }
+      const rmsH = Math.sqrt(sum / numLowBins)/255;
 
       // Mappatura del volume alle basse frequenze su una scala
-      const targetScale = 1 + Math.min((rms/255)/4 + rmsB/255 , 1)*0.3;
-      const smoothing = 1;
-      currentScale = currentScale * (1 - smoothing) + targetScale * smoothing;
+      const currentScale = 1 + Math.min((rmsB + rmsM + rmsH)/3 , 1)*0.3;
+      //const smoothing = 1;
+      //currentScale = currentScale * (1 - smoothing) + targetScale * smoothing;
 
       if (isRunning) {
           if (true || Math.abs(currentScale - lastScale) > 0.01) {
